@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { MessageSquare } from "lucide-react";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface CommentInputProps {
   value?: string;
@@ -17,10 +18,18 @@ export function CommentInput({
 }: CommentInputProps) {
   const [localValue, setLocalValue] = useState(value);
   const [isFocused, setIsFocused] = useState(false);
+  const debouncedValue = useDebounce(localValue, 500);
 
   useEffect(() => {
     setLocalValue(value);
   }, [value]);
+
+  // Auto-save when user stops typing
+  useEffect(() => {
+    if (debouncedValue !== value) {
+      onChange(debouncedValue.trim() || undefined);
+    }
+  }, [debouncedValue, onChange, value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
@@ -31,6 +40,7 @@ export function CommentInput({
 
   const handleBlur = () => {
     setIsFocused(false);
+    // Save immediately on blur
     onChange(localValue.trim() || undefined);
   };
 
