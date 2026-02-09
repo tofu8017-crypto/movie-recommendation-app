@@ -105,6 +105,51 @@ export function useWatchedList() {
     [movies]
   );
 
+  const exportData = useCallback(() => {
+    const dataStr = JSON.stringify(movies, null, 2);
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `movie-list-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [movies]);
+
+  const importData = useCallback(
+    (file: File) => {
+      return new Promise<{ success: boolean; count: number }>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const importedMovies = JSON.parse(e.target?.result as string) as WatchedMovie[];
+
+            // Validate data structure
+            if (!Array.isArray(importedMovies)) {
+              throw new Error("Invalid data format");
+            }
+
+            // Merge with existing data, avoiding duplicates
+            setMovies((prev) => {
+              const existingIds = new Set(prev.map((m) => m.id));
+              const newMovies = importedMovies.filter((m) => !existingIds.has(m.id));
+              return [...prev, ...newMovies];
+            });
+
+            resolve({ success: true, count: importedMovies.length });
+          } catch (error) {
+            reject(new Error("Invalid JSON file"));
+          }
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsText(file);
+      });
+    },
+    [setMovies]
+  );
+
   return {
     movies,
     watchedIds,
@@ -118,6 +163,8 @@ export function useWatchedList() {
     updateRating,
     updateComment,
     getMovie,
+    exportData,
+    importData,
     isHydrated,
     count: movies.length,
     favoriteCount: favoriteIds.size,

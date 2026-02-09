@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Star, Trash2, SortAsc } from "lucide-react";
+import { Heart, Star, Trash2, SortAsc, Download, Upload } from "lucide-react";
 import { useWatchedListContext } from "@/stores/watched-context";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StarRating } from "@/components/ui/StarRating";
@@ -12,9 +12,18 @@ import { getPosterUrl } from "@/lib/tmdb/image";
 type SortKey = "addedAt" | "vote_average" | "title" | "favorite" | "userRating";
 
 export default function WatchedPage() {
-  const { movies, removeMovie, toggleFavorite, isHydrated, favoriteCount } =
-    useWatchedListContext();
+  const {
+    movies,
+    removeMovie,
+    toggleFavorite,
+    exportData,
+    importData,
+    isHydrated,
+    favoriteCount,
+  } = useWatchedListContext();
   const [sortKey, setSortKey] = useState<SortKey>("addedAt");
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const sortedMovies = [...movies].sort((a, b) => {
     switch (sortKey) {
@@ -31,6 +40,32 @@ export default function WatchedPage() {
     }
   });
 
+  const handleExport = () => {
+    exportData();
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const result = await importData(file);
+      alert(`✅ ${result.count}本の映画をインポートしました！`);
+    } catch (error) {
+      alert(`❌ インポートに失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   if (!isHydrated) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -41,18 +76,51 @@ export default function WatchedPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">視聴済みリスト</h1>
-          <p className="text-sm text-foreground-secondary">
-            {movies.length}本の映画を記録済み
-            {favoriteCount > 0 && (
-              <span className="ml-2 inline-flex items-center gap-1 text-accent">
-                <Star className="h-3 w-3 fill-current" />
-                {favoriteCount}本のお気に入り
-              </span>
-            )}
-          </p>
+      <div className="mb-6 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">視聴済みリスト</h1>
+            <p className="text-sm text-foreground-secondary">
+              {movies.length}本の映画を記録済み
+              {favoriteCount > 0 && (
+                <span className="ml-2 inline-flex items-center gap-1 text-accent">
+                  <Star className="h-3 w-3 fill-current" />
+                  {favoriteCount}本のお気に入り
+                </span>
+              )}
+            </p>
+          </div>
+
+          {movies.length > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                title="データをエクスポート"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">エクスポート</span>
+              </button>
+              <button
+                onClick={handleImportClick}
+                disabled={importing}
+                className="flex items-center gap-2 rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                title="データをインポート"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {importing ? "インポート中..." : "インポート"}
+                </span>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImportFile}
+                className="hidden"
+              />
+            </div>
+          )}
         </div>
 
         {movies.length > 1 && (
