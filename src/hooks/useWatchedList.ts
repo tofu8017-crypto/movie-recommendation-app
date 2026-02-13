@@ -152,6 +152,7 @@ export function useWatchedList() {
 
   return {
     movies,
+    setMovies,
     watchedIds,
     favoriteIds,
     isWatched,

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, Film, Heart, Sparkles } from "lucide-react";
 import { useWatchedListContext } from "@/stores/watched-context";
+import { UserButton } from "@/components/auth/UserButton";
 
 export function Header() {
   const [query, setQuery] = useState("");
@@ -63,6 +64,8 @@ export function Header() {
             <span>おすすめ</span>
           </Link>
         </nav>
+
+        <UserButton />
       </div>
     </header>
   );
