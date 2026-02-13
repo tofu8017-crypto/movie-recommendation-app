@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import { useWatchedListContext } from "./watched-context";
 import { useCloudSync } from "@/hooks/useCloudSync";
 import type { WatchedMovie } from "@/types";
@@ -31,7 +31,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [showMigrationPrompt, setShowMigrationPrompt] = useState(false);
   const [pendingMigration, setPendingMigration] = useState(false);
 
-  const onCloudDataLoaded = (cloudMovies: WatchedMovie[]) => {
+  const onCloudDataLoaded = useCallback((cloudMovies: WatchedMovie[]) => {
     // Merge cloud data with local data
     // Cloud data takes precedence for conflicts
     setMovies((localMovies) => {
@@ -50,7 +50,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
       return merged;
     });
-  };
+  }, [setMovies]);
 
   const {
     syncStatus,
@@ -59,6 +59,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     hasMigrated,
     isSignedIn,
     userId,
+    isLoadingFromCloud,
     migrateLocalToCloud,
     syncMovieToCloud,
     deleteMovieFromCloud,
@@ -78,7 +79,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
   // Auto-sync changes to cloud when signed in and migrated
   useEffect(() => {
-    if (!isSignedIn || !hasMigrated || !userId) return;
+    if (!isSignedIn || !hasMigrated || !userId || isLoadingFromCloud) return;
 
     // This effect will trigger when movies change
     // We sync the entire list periodically or on changes
@@ -89,7 +90,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     }, 1000); // Debounce sync by 1 second
 
     return () => clearTimeout(syncTimeout);
-  }, [movies, isSignedIn, hasMigrated, userId, syncMovieToCloud]);
+  }, [movies, isSignedIn, hasMigrated, userId, isLoadingFromCloud, syncMovieToCloud]);
 
   const confirmMigration = async () => {
     setPendingMigration(true);

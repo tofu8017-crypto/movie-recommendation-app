@@ -22,6 +22,7 @@ export function useCloudSync({ localMovies, onCloudDataLoaded }: UseSyncOptions)
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasMigrated, setHasMigrated] = useState(false);
+  const [isLoadingFromCloud, setIsLoadingFromCloud] = useState(false);
 
   // Check if user has already migrated (stored in localStorage)
   const checkMigrationStatus = useCallback(() => {
@@ -41,6 +42,7 @@ export function useCloudSync({ localMovies, onCloudDataLoaded }: UseSyncOptions)
   const loadFromCloud = useCallback(async () => {
     if (!user) return;
 
+    setIsLoadingFromCloud(true);
     setSyncStatus("syncing");
     setError(null);
 
@@ -57,6 +59,8 @@ export function useCloudSync({ localMovies, onCloudDataLoaded }: UseSyncOptions)
       console.error("Failed to load from cloud:", err);
       setError("クラウドからのデータ読み込みに失敗しました");
       setSyncStatus("error");
+    } finally {
+      setIsLoadingFromCloud(false);
     }
   }, [user, onCloudDataLoaded]);
 
@@ -129,6 +133,7 @@ export function useCloudSync({ localMovies, onCloudDataLoaded }: UseSyncOptions)
     hasMigrated,
     isSignedIn: !!user,
     userId: user?.id,
+    isLoadingFromCloud,
     loadFromCloud,
     migrateLocalToCloud,
     syncMovieToCloud,
