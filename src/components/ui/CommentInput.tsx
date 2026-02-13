@@ -16,12 +16,12 @@ export function CommentInput({
   maxLength = 140,
   placeholder = "感想を入力...",
 }: CommentInputProps) {
-  const [localValue, setLocalValue] = useState(value);
+  const [localValue, setLocalValue] = useState(value || "");
   const [isFocused, setIsFocused] = useState(false);
   const debouncedValue = useDebounce(localValue, 500);
 
   useEffect(() => {
-    setLocalValue(value);
+    setLocalValue(value || "");
   }, [value]);
 
   // Auto-save when user stops typing
@@ -44,7 +44,7 @@ export function CommentInput({
     onChange(localValue.trim() || undefined);
   };
 
-  const remaining = maxLength - localValue.length;
+  const remaining = maxLength - (localValue || "").length;
   const isNearLimit = remaining <= 20;
 
   return (
