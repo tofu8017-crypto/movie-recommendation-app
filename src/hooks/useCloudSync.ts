@@ -58,7 +58,8 @@ export function useCloudSync({ localMovies, onCloudDataLoaded }: UseSyncOptions)
     } catch (err: any) {
       console.error("Failed to load from cloud:", err);
       const detail = err?.message || err?.code || JSON.stringify(err);
-      setError(`クラウドからのデータ読み込みに失敗しました: ${detail}`);
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "(未設定)";
+      setError(`同期エラー: ${detail} [URL: ${supabaseUrl.substring(0, 30)}...]`);
       setSyncStatus("error");
     } finally {
       setIsLoadingFromCloud(false);
