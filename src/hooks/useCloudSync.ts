@@ -55,9 +55,10 @@ export function useCloudSync({ localMovies, onCloudDataLoaded }: UseSyncOptions)
 
       setLastSyncTime(new Date());
       setSyncStatus("success");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load from cloud:", err);
-      setError("クラウドからのデータ読み込みに失敗しました");
+      const detail = err?.message || err?.code || JSON.stringify(err);
+      setError(`クラウドからのデータ読み込みに失敗しました: ${detail}`);
       setSyncStatus("error");
     } finally {
       setIsLoadingFromCloud(false);
